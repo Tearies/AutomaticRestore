@@ -7,10 +7,15 @@ namespace AutomaticRestore.Common
     {
         public TaskStatus Status { get; private set; }
         public object Result { get; private set; }
-        public TaskStatuesChangedEventArgs(TaskStatus status, object pResult)
+        public Exception Exception { get; private set; }
+        public CancellationResons CancellationResons { get; private set; }
+
+        public TaskStatuesChangedEventArgs(TaskStatus status, object result, CancellationResons cancellationResons = CancellationResons.None, Exception exception = null)
         {
             Status = status;
-            Result = pResult;
+            Result = result;
+            Exception = exception;
+            CancellationResons = cancellationResons;
         }
     }
 }

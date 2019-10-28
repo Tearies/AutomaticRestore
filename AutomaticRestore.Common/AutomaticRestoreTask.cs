@@ -23,5 +23,9 @@ namespace AutomaticRestore.Common
             });
             return 0;
         }
+
+        public AutomaticRestoreTask() : base(TimeSpan.FromMilliseconds(5))
+        {
+        }
     }
 }

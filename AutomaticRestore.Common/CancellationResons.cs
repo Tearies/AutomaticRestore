@@ -2,7 +2,9 @@
 {
     public enum CancellationResons
     {
+        None,
         TimeOut,
         CallCancle
+       
     }
 }

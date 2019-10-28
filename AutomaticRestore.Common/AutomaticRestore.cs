@@ -45,7 +45,7 @@ namespace AutomaticRestore.Common
 
         private void LastTask_TaskStatuesChanged(object sender, TaskStatuesChangedEventArgs e)
         {
-            Console.WriteLine(e.Status + ":" + e.Result);
+            Console.WriteLine(e.Status + ":" + e.Result + "  " + e.CancellationResons + "    " + e.Exception);
         }
     }
 }

@@ -12,6 +12,7 @@ namespace AutomaticRestore.Common
         public event EventHandler<TaskStatuesChangedEventArgs> TaskStatuesChanged;
         public bool IsAlive => workThread.IsAlive;
         protected bool IsCancellationRequested => cts.IsCancellationRequested;
+        private CancellationResons cancellationResons;
         public void Dispose()
         {
             cts.CancellationRequested -= Cts_CancellationRequested;
@@ -19,18 +20,24 @@ namespace AutomaticRestore.Common
             tcs.Task.Dispose();
             tcs = null;
             workThread = null;
-        }
-        public AutomaticCancellationTask()
+        } 
+        protected AutomaticCancellationTask(TimeSpan timeoutSpan)
         {
-            cts = new AutomaticCancellationTokenSource(TimeSpan.FromSeconds(10));
+            cancellationResons = CancellationResons.None;
+            cts = new AutomaticCancellationTokenSource(timeoutSpan);
             tcs = new TaskCompletionSource<object>();//<object>();
             workThread = new Thread(() =>
             {
                 try
                 {
                     Console.WriteLine("Start");
-                    tcs.TrySetResult(OnTaskDoing());
-                    Console.WriteLine("End");
+                    var result = OnTaskDoing();
+                    if (!IsCancellationRequested)
+                    {
+                        tcs.SetResult(result);
+                        Console.WriteLine("End");
+                    }
+                   
                 }
                 catch (ThreadAbortException tae)
                 {
@@ -38,7 +45,7 @@ namespace AutomaticRestore.Common
                 }
                 catch (Exception e)
                 {
-                    tcs.TrySetException(e);
+                    tcs.SetException(e);
                 }
 
             });
@@ -47,17 +54,27 @@ namespace AutomaticRestore.Common
             tcs.Task.ContinueWith(p =>
             {
                 object result = null;
-                if (p.IsCanceled || p.IsFaulted)
+                Exception e = null;
+                if (p.IsCanceled  )
                 {
                     result = null;
+                }
+                else if(p.IsFaulted)
+                {
+                    e = p.Exception;
                 }
                 else
                 {
                     result = p.Result;
                 }
-                OnTaskStatuesChanged(p.Status, result);
+                OnTaskStatuesChanged(p.Status, result, cancellationResons,e);
             });
             workThread.Start();
+        }
+
+        private void OnTaskStatuesChanged(TaskStatus pStatus, object pResult, CancellationResons cancellationResons1, Exception exception)
+        {
+            TaskStatuesChanged?.Invoke(this, new TaskStatuesChangedEventArgs(pStatus, pResult, cancellationResons1, exception));
         }
 
         /// <summary>
@@ -75,10 +92,10 @@ namespace AutomaticRestore.Common
                 && temptcs.Task.Status != TaskStatus.RanToCompletion
                  )
             {
-
-                tempthread.Abort(e.CancellationReson);
+                cancellationResons = e.CancellationReson;
+                tempthread.Abort(cancellationResons);
                 tempthread.Join();
-                temptcs.TrySetCanceled();
+                temptcs.SetCanceled();
             }
         }
         public void Cancel()
@@ -86,9 +103,6 @@ namespace AutomaticRestore.Common
             cts.Cancel();
         }
 
-        protected void OnTaskStatuesChanged(TaskStatus e, object pResult)
-        {
-            TaskStatuesChanged?.Invoke(this, new TaskStatuesChangedEventArgs(e, pResult));
-        }
+        
     }
 }
