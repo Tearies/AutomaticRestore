@@ -9,19 +9,18 @@ namespace AutomaticRestore.Common
     public class AutomaticRestore : IDisposable
     {
         public static readonly AutomaticRestore Default = new Lazy<AutomaticRestore>(() => new AutomaticRestore()).Value;
-
-        public AutomaticRestore()
+        private AutomaticRestore()
         {
 
         }
 
-        private AutomaticRestoreTask LastTask;
+        private AutomaticRestoreTask _lastTask;
 
         public void CreateRestorePoint()
         {
             ReleaseLastTask();
-            LastTask = new AutomaticRestoreTask();
-            LastTask.TaskStatuesChanged += LastTask_TaskStatuesChanged;
+            _lastTask = new AutomaticRestoreTask();
+            _lastTask.TaskStatuesChanged += LastTask_TaskStatuesChanged;
         }
 
         public void Dispose()
@@ -31,15 +30,15 @@ namespace AutomaticRestore.Common
 
         private void ReleaseLastTask()
         {
-            if (LastTask != null)
+            if (_lastTask != null)
             {
-                if (LastTask.IsAlive)
+                if (_lastTask.IsAlive)
                 {
-                    LastTask.Cancel();
+                    _lastTask.Cancel();
                 }
 
-                LastTask.TaskStatuesChanged -= LastTask_TaskStatuesChanged;
-                LastTask.Dispose();
+                _lastTask.TaskStatuesChanged -= LastTask_TaskStatuesChanged;
+                _lastTask.Dispose();
             }
         }
 
