@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Windows;
 using System.Windows.Threading;
 
@@ -10,14 +11,38 @@ namespace AutomaticRestore.Common
     public class AutomaticRestore : IDisposable
     {
         public static readonly AutomaticRestore Default = new Lazy<AutomaticRestore>(() => new AutomaticRestore()).Value;
+
         private AutomaticRestore()
         {
+            restoreClock = new AutomaticRestoreClock();
+            restoreClock.ClockTicked += RestoreClock_ClockTicked;
+        }
 
+        private void RestoreClock_ClockTicked(object sender, EventArgs e)
+        {
+            CreateRestorePoint();
+        }
+
+        private AutomaticRestoreClock restoreClock;
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="intervalTime"></param>
+        public void StartAutomaticRestore(TimeSpan intervalTime)
+        {
+            restoreClock.ConfigTimer(Timeout.InfiniteTimeSpan,intervalTime);
+            restoreClock.ConfigTimer(intervalTime, intervalTime);
+        }
+         
+        public void StopAutomaticRestore()
+        {
+            restoreClock.ConfigTimer(Timeout.InfiniteTimeSpan,Timeout.InfiniteTimeSpan);
         }
 
         private AutomaticRestoreTask _lastTask;
 
-        public void CreateRestorePoint()
+        private void CreateRestorePoint()
         {
             ReleaseLastTask();
             _lastTask = new AutomaticRestoreTask();
@@ -26,11 +51,13 @@ namespace AutomaticRestore.Common
 
         private void _lastTask_TaskError(object sender, TaskErrorEventArgs<int> e)
         {
-           
+
         }
 
         public void Dispose()
         {
+            restoreClock.ClockTicked -= RestoreClock_ClockTicked;
+            restoreClock.Dispose();
             ReleaseLastTask();
         }
 
@@ -47,7 +74,5 @@ namespace AutomaticRestore.Common
                 _lastTask.Dispose();
             }
         }
-
-        
     }
 }

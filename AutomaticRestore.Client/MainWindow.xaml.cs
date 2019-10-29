@@ -29,12 +29,12 @@ namespace AutomaticRestore.Client
 
         private void Button_Click(object sender, RoutedEventArgs e)
         {
-            AutomaticRestore.Common.AutomaticRestore.Default.CreateRestorePoint();
+            AutomaticRestore.Common.AutomaticRestore.Default.StartAutomaticRestore(TimeSpan.FromSeconds(5));
         }
 
         private void Button_Click_1(object sender, RoutedEventArgs e)
         {
-           
+            AutomaticRestore.Common.AutomaticRestore.Default.StopAutomaticRestore();
         }
     }
 }

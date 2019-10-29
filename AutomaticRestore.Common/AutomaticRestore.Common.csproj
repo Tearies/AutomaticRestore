@@ -47,6 +47,7 @@
     <Compile Include="AutomaticCancellationTask.cs" />
     <Compile Include="AutomaticCancellationTaskResult.cs" />
     <Compile Include="AutomaticCancellationTokenSource.cs" />
+    <Compile Include="AutomaticRestoreClock.cs" />
     <Compile Include="AutomaticRestoreTask.cs" />
     <Compile Include="CancellationResons.cs" />
     <Compile Include="AutomaticRestore.cs" />

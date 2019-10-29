@@ -8,7 +8,7 @@ namespace AutomaticRestore.Common
 {
     public sealed class AutomaticRestoreTask : AutomaticCancellationTask<int>
     {
-        public AutomaticRestoreTask() : base(TimeSpan.FromSeconds(5))
+        public AutomaticRestoreTask() : base(TimeSpan.FromSeconds(2))
         {
         }
 
