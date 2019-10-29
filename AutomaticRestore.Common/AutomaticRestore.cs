@@ -8,12 +8,15 @@ using System.Windows.Threading;
 
 namespace AutomaticRestore.Common
 {
-    public class AutomaticRestore : IDisposable
+    public class AutomaticRestore<T> : IDisposable where T : AutomaticRestoreConfiguration
     {
-        public static readonly AutomaticRestore Default = new Lazy<AutomaticRestore>(() => new AutomaticRestore()).Value;
+        public static readonly AutomaticRestore<T> Default = new Lazy<AutomaticRestore<T>>(() => new AutomaticRestore<T>()).Value;
+
+        private T configuration;
 
         private AutomaticRestore()
         {
+            configuration = Activator.CreateInstance<T>();
             restoreClock = new AutomaticRestoreClock();
             restoreClock.ClockTicked += RestoreClock_ClockTicked;
         }
@@ -29,15 +32,21 @@ namespace AutomaticRestore.Common
         /// 
         /// </summary>
         /// <param name="intervalTime"></param>
-        public void StartAutomaticRestore(TimeSpan intervalTime)
+        public void StartAutomaticRestore()
         {
-            restoreClock.ConfigTimer(Timeout.InfiniteTimeSpan,intervalTime);
-            restoreClock.ConfigTimer(intervalTime, intervalTime);
+            if (configuration.IsEnabled)
+            {
+                //暂停
+                restoreClock.ConfigTimer(Timeout.InfiniteTimeSpan, configuration.IntervalTime);
+                //开始
+                restoreClock.ConfigTimer(configuration.IntervalTime, configuration.IntervalTime);
+            }
+
         }
-         
+
         public void StopAutomaticRestore()
         {
-            restoreClock.ConfigTimer(Timeout.InfiniteTimeSpan,Timeout.InfiniteTimeSpan);
+            restoreClock.ConfigTimer(Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
         }
 
         private AutomaticRestoreTask _lastTask;
@@ -45,7 +54,7 @@ namespace AutomaticRestore.Common
         private void CreateRestorePoint()
         {
             ReleaseLastTask();
-            _lastTask = new AutomaticRestoreTask();
+            _lastTask = new AutomaticRestoreTask(configuration.TaskTimeOut);
             _lastTask.TaskError += _lastTask_TaskError;
         }
 

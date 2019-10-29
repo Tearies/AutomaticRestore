@@ -8,8 +8,8 @@ namespace AutomaticRestore.Common
 {
     public sealed class AutomaticRestoreTask : AutomaticCancellationTask<int>
     {
-        public AutomaticRestoreTask() : base(TimeSpan.FromSeconds(2))
-        {
+        public AutomaticRestoreTask(TimeSpan timeout) : base(timeout)
+        { 
         }
 
         #region Overrides of AutomaticCancellationTask<int>
