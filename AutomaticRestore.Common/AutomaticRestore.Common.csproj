@@ -45,13 +45,14 @@
   <ItemGroup>
     <Compile Include="AutomaticCancellationEventArgs.cs" />
     <Compile Include="AutomaticCancellationTask.cs" />
+    <Compile Include="AutomaticCancellationTaskResult.cs" />
     <Compile Include="AutomaticCancellationTokenSource.cs" />
     <Compile Include="AutomaticRestoreTask.cs" />
     <Compile Include="CancellationResons.cs" />
     <Compile Include="AutomaticRestore.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="TaskCompletionSource.cs" />
-    <Compile Include="TaskStatuesChangedEventArgs.cs" />
+    <Compile Include="AutomaticTaskSource.cs" />
+    <Compile Include="TaskErrorEventArgs.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

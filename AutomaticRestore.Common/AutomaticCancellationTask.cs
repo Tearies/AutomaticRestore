@@ -4,12 +4,12 @@ using System.Threading.Tasks;
 
 namespace AutomaticRestore.Common
 {
-    public abstract class AutomaticCancellationTask : IDisposable
+    public abstract class AutomaticCancellationTask<T> : IDisposable
     {
         private AutomaticCancellationTokenSource cts;
-        private TaskCompletionSource<object> tcs;
+        private TaskCompletionSource<T> tcs;
         private Thread workThread;
-        public event EventHandler<TaskStatuesChangedEventArgs> TaskStatuesChanged;
+        internal event EventHandler<TaskErrorEventArgs<T>> TaskError;
         public bool IsAlive => workThread.IsAlive;
         protected bool IsCancellationRequested => cts.IsCancellationRequested;
         private CancellationResons cancellationResons;
@@ -20,24 +20,23 @@ namespace AutomaticRestore.Common
             tcs.Task.Dispose();
             tcs = null;
             workThread = null;
-        } 
+        }
         protected AutomaticCancellationTask(TimeSpan timeoutSpan)
         {
             cancellationResons = CancellationResons.None;
             cts = new AutomaticCancellationTokenSource(timeoutSpan);
-            tcs = new TaskCompletionSource<object>();//<object>();
+            tcs = new TaskCompletionSource<T>();//<object>();
             workThread = new Thread(() =>
             {
                 try
                 {
-                    Console.WriteLine("Start");
+                    OnTaskStart();
                     var result = OnTaskDoing();
                     if (!IsCancellationRequested)
                     {
                         tcs.SetResult(result);
-                        Console.WriteLine("End");
+                        OnTaskEnd();
                     }
-                   
                 }
                 catch (ThreadAbortException tae)
                 {
@@ -53,13 +52,13 @@ namespace AutomaticRestore.Common
             cts.CancellationRequested += Cts_CancellationRequested;
             tcs.Task.ContinueWith(p =>
             {
-                object result = null;
+                T result = default(T);
                 Exception e = null;
-                if (p.IsCanceled  )
+                if (p.IsCanceled)
                 {
-                    result = null;
+                    result = default(T);
                 }
-                else if(p.IsFaulted)
+                else if (p.IsFaulted)
                 {
                     e = p.Exception;
                 }
@@ -67,21 +66,33 @@ namespace AutomaticRestore.Common
                 {
                     result = p.Result;
                 }
-                OnTaskStatuesChanged(p.Status, result, cancellationResons,e);
+
+                var taskresult =
+                    AutomaticCancellationTaskResult<T>.BuildResult(p.Status, cancellationResons, result, e);
+                try
+                {
+                    OnTaskStatuesChanged(taskresult);
+                }
+                catch (Exception c)
+                {
+                    OnTaskError(taskresult, c);
+                }
+
             });
             workThread.Start();
         }
 
-        private void OnTaskStatuesChanged(TaskStatus pStatus, object pResult, CancellationResons cancellationResons1, Exception exception)
-        {
-            TaskStatuesChanged?.Invoke(this, new TaskStatuesChangedEventArgs(pStatus, pResult, cancellationResons1, exception));
-        }
+        protected abstract void OnTaskStatuesChanged(AutomaticCancellationTaskResult<T> taskResult);
 
         /// <summary>
         /// 异步执行任务, 该任务超时后会自动回收,不建议该方法内部执行异步方法
         /// </summary>
         /// <returns></returns>
-        protected abstract object OnTaskDoing();
+        protected abstract T OnTaskDoing();
+         
+        protected abstract void OnTaskStart();
+
+        protected abstract void OnTaskEnd();
 
         private void Cts_CancellationRequested(object sender, AutomaticCancellationEventArgs e)
         {
@@ -103,6 +114,9 @@ namespace AutomaticRestore.Common
             cts.Cancel();
         }
 
-        
+        protected virtual void OnTaskError(AutomaticCancellationTaskResult<T> e, Exception innerException)
+        {
+            TaskError?.Invoke(this, new TaskErrorEventArgs<T>(e, innerException));
+        }
     }
 }

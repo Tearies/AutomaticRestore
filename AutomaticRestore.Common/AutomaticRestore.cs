@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Windows;
 using System.Windows.Threading;
 
 namespace AutomaticRestore.Common
@@ -20,7 +21,12 @@ namespace AutomaticRestore.Common
         {
             ReleaseLastTask();
             _lastTask = new AutomaticRestoreTask();
-            _lastTask.TaskStatuesChanged += LastTask_TaskStatuesChanged;
+            _lastTask.TaskError += _lastTask_TaskError;
+        }
+
+        private void _lastTask_TaskError(object sender, TaskErrorEventArgs<int> e)
+        {
+           
         }
 
         public void Dispose()
@@ -37,14 +43,11 @@ namespace AutomaticRestore.Common
                     _lastTask.Cancel();
                 }
 
-                _lastTask.TaskStatuesChanged -= LastTask_TaskStatuesChanged;
+                _lastTask.TaskError -= _lastTask_TaskError;
                 _lastTask.Dispose();
             }
         }
 
-        private void LastTask_TaskStatuesChanged(object sender, TaskStatuesChangedEventArgs e)
-        {
-            Console.WriteLine(e.Status + ":" + e.Result + "  " + e.CancellationResons + "    " + e.Exception);
-        }
+        
     }
 }
